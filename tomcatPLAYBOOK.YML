@@ -1,0 +1,37 @@
+---
+- name: Install Java 11 and Tomcat
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Install required tools
+      yum:
+        name:
+          - wget
+          - tar
+        state: present
+
+    - name: Download Amazon Corretto 11
+      get_url:
+        url: https://corretto.aws/downloads/latest/amazon-corretto-11-x64-linux-jdk.rpm
+        dest: /tmp/amazon-corretto-11.rpm
+
+    - name: Install Java 11
+      yum:
+        name: /tmp/amazon-corretto-11.rpm
+        state: present
+        disable_gpg_check: yes
+
+    - name: Download Tomcat
+      get_url:
+        url: https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.87/bin/apache-tomcat-9.0.87.tar.gz
+        dest: /opt/tomcat.tar.gz
+
+    - name: Extract Tomcat
+      unarchive:
+        src: /opt/tomcat.tar.gz
+        dest: /opt/
+        remote_src: yes
+
+    - name: Start Tomcat
+      shell: /opt/apache-tomcat-9.0.87/bin/startup.sh
