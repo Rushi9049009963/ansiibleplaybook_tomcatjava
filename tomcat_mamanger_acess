@@ -1,0 +1,48 @@
+---
+- name: Enable Tomcat Manager GUI access
+  hosts: all
+  become: yes
+
+  vars:
+    tomcat_home: /opt/apache-tomcat-9.0.87
+    manager_user: root
+    manager_pass: root123
+
+  tasks:
+
+    - name: Backup tomcat-users.xml
+      copy:
+        src: "{{ tomcat_home }}/conf/tomcat-users.xml"
+        dest: "{{ tomcat_home }}/conf/tomcat-users.xml.bak"
+        remote_src: yes
+
+    - name: Configure tomcat manager user
+      copy:
+        dest: "{{ tomcat_home }}/conf/tomcat-users.xml"
+        content: |
+          <?xml version="1.0" encoding="UTF-8"?>
+          <tomcat-users>
+            <role rolename="manager-gui"/>
+            <role rolename="manager-script"/>
+            <user username="{{ manager_user }}" password="{{ manager_pass }}" roles="manager-gui,manager-script"/>
+          </tomcat-users>
+
+    - name: Backup manager context.xml
+      copy:
+        src: "{{ tomcat_home }}/webapps/manager/META-INF/context.xml"
+        dest: "{{ tomcat_home }}/webapps/manager/META-INF/context.xml.bak"
+        remote_src: yes
+
+    - name: Allow remote access to manager app
+      copy:
+        dest: "{{ tomcat_home }}/webapps/manager/META-INF/context.xml"
+        content: |
+          <Context antiResourceLocking="false" privileged="true">
+          </Context>
+
+    - name: Restart Tomcat
+      shell: "{{ tomcat_home }}/bin/shutdown.sh || true"
+      ignore_errors: yes
+
+    - name: Start Tomcat
+      shell: "{{ tomcat_home }}/bin/startup.sh"
